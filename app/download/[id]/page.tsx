@@ -47,10 +47,12 @@ export default function DownloadPage({ params }: any) {
       <input
         type="password"
         placeholder="Enter password"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") download(e.currentTarget.value);
-        }}
         className="p-2 bg-gray-800 rounded"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            download((e.target as HTMLInputElement).value);
+          }
+        }}
       />
     </div>
   );

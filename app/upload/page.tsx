@@ -1,41 +1,35 @@
-import { supabase } from "./supabase";
-import { deriveKey, getChunkIV } from "./crypto";
+"use client";
 
-const CHUNK_SIZE = 1024 * 1024;
+import { useState } from "react";
+import { uploadFile } from "@/lib/upload";
 
-export async function uploadFile(file: File, password: string) {
-  const fileId = crypto.randomUUID();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const baseIV = crypto.getRandomValues(new Uint8Array(12));
+export default function UploadPage() {
+  const [file, setFile] = useState<File | null>(null);
+  const [password, setPassword] = useState("");
 
-  const key = await deriveKey(password, salt);
+  return (
+    <div className="h-screen flex flex-col items-center justify-center bg-black text-white">
+      <h1 className="text-2xl mb-4">Upload File</h1>
 
-  let chunkIndex = 0;
+      <input
+        type="file"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        className="mb-4"
+      />
 
-  for (let i = 0; i < file.size; i += CHUNK_SIZE) {
-    const chunk = await file.slice(i, i + CHUNK_SIZE).arrayBuffer();
-    const iv = getChunkIV(baseIV, chunkIndex);
+      <input
+        type="password"
+        placeholder="Password"
+        className="mb-4 p-2 bg-gray-800 rounded"
+        onChange={(e) => setPassword(e.target.value)}
+      />
 
-    const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      chunk
-    );
-
-    await supabase.storage
-      .from("files")
-      .upload(`${fileId}/${chunkIndex}`, new Blob([encrypted]));
-
-    chunkIndex++;
-  }
-
-  await supabase.from("files").insert({
-    id: fileId,
-    filename: file.name,
-    salt: Array.from(salt),
-    baseiv: Array.from(baseIV),
-    chunkcount: chunkIndex,
-  });
-
-  alert(`Upload done!\nFile ID: ${fileId}`);
+      <button
+        className="bg-white text-black px-6 py-2 rounded"
+        onClick={() => file && uploadFile(file, password)}
+      >
+        Upload
+      </button>
+    </div>
+  );
 }
